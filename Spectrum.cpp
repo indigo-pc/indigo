@@ -19,20 +19,15 @@
  * Computational methods below assume that dark is already subtracted. Integration time is assumed to be seconds.
 */
 Spectrum::Spectrum( std::vector<double> data,           // calibrated data
-                    std::vector<double> wavelengths,    // full abscissa
-                    double intTime )                    // integration time in s
-    : spectralData(std::move(data)), spectralWavelengths(std::move(wavelengths)), integrationTime(intTime)
+                    std::vector<double> wavelengths)    // full abscissa
+    : spectralData(std::move(data)), spectralWavelengths(std::move(wavelengths))
 {
     if ( spectralData.size() != spectralWavelengths.size() )  {
-        throw std::runtime_error( "Length of calibration data must match length of spectral data." );
+        throw std::runtime_error( "Data and wavelength vectors must have matching length." );
     }
-    double interval = getSpectralWavelengths().at(1) - getSpectralWavelengths().at(0);
     for ( int i = 0; i < getSpectralWavelengths().size()-1; i++ )  {
-        if ( ! ( getSpectralWavelengths().at(i) < getSpectralWavelengths().at(i+1) ) )  { 
+        if ( ! ( getSpectralWavelengths().at(i) <= getSpectralWavelengths().at(i+1) ) )  { 
             throw std::runtime_error( "Spectral wavelengths must be a vector of unique values in increasing order" );
-        }
-        if ( ! ( getSpectralWavelengths().at(i+1) - getSpectralWavelengths().at(i) == interval ) )  { 
-            throw std::runtime_error( "The interval between wevelength values must be constant" );
         }
         if ( getSpectralWavelengths().at(i) < 0 ) {
             throw std::runtime_error( "Spectral wavelength values must be positive." );
@@ -43,9 +38,9 @@ Spectrum::Spectrum( std::vector<double> data,           // calibrated data
 /**
  * A testing constructor with arbitrary default values.
 */
-Spectrum::Spectrum() : Spectrum(    std::vector<double> { 0.40, 0.45, 0.50, 0.55, 0.60, 0.80, 1.00, 0.80, 0.60, 0.50, 0.40, 0.30, 0.20, 0.15, 0.05 }, // testing constructor
-                                    std::vector<double> { 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9.00, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0 },
-                                    0.001 ) { }
+Spectrum::Spectrum() : Spectrum(    std::vector<double> { 0.40, 0.45, 0.50, 0.55, 0.60, 0.80, 1.00, 0.80, 0.60, 0.50, 0.40, 0.30, 0.20, 0.15, 0.05 },
+                                    std::vector<double> { 1.00, 2.00, 3.00, 4.00, 5.00, 6.00, 7.00, 8.00, 9.00, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0 } ) 
+                                    { }
 
 //
 // getters & setters
@@ -56,8 +51,6 @@ std::vector<double> Spectrum::getSpectralData() { return this -> spectralData; }
 void Spectrum::setSpectralData( int i, double d ) { ( this -> spectralData[i] ) = d; }
 
 std::vector<double> Spectrum::getSpectralWavelengths() { return this -> spectralWavelengths; }
-
-double Spectrum::getIntegrationTime() { return this -> integrationTime; }
 
 std::tuple<int, int> Spectrum::getWavelengthIndices( double lowerWavelength, double upperWavelength ) {
     if ( lowerWavelength >= upperWavelength ) {
@@ -287,38 +280,51 @@ Spectrum Spectrum::computePowerPerSquareAreaPerWavelength( double collectionArea
  * Compute absolute energy in joules.
  * Note: spectra constructed in watts/[wavelength] have energies in units of joules.
 */
-double Spectrum::computeEnergy( int lowerBoundWavelength, int upperBoundWavelength ) {
-    return computePower( lowerBoundWavelength, upperBoundWavelength ) * getIntegrationTime();
+double Spectrum::computeEnergy( int lowerBoundWavelength, int upperBoundWavelength, double integrationTime ) {
+    return computePower( lowerBoundWavelength, upperBoundWavelength ) * integrationTime;
 }
 
 /**
  * Compute energy in joules per some collection area.
  * Note: spectra constructed in watts/[wavelength] have energies in units of joules.
 */
-double Spectrum::computeEnergyPerSquareArea( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea ) {
-    return ( getIntegrationTime() * computePower( lowerBoundWavelength, upperBoundWavelength ) ) / collectionArea;
+double Spectrum::computeEnergyPerSquareArea( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime ) {
+    return ( integrationTime * computePower( lowerBoundWavelength, upperBoundWavelength ) ) / collectionArea;
 }
 
 /**
  * Compute energy spectrum in units of [energy]/[wavelength].
  * Note: spectra constructed in watts/[wavelength] have energies in units of joules.
 */
-Spectrum Spectrum::computeEnergyPerSquareAreaPerWavelength( double collectionArea ) {
-    return ( *this * ( getIntegrationTime() / collectionArea ) );
+Spectrum Spectrum::computeEnergyPerSquareAreaPerWavelength( double collectionArea, double integrationTime ) {
+    return ( *this * ( integrationTime / collectionArea ) );
 }
 
-double Spectrum::computeIlluminanceLux(std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double areaSquareMeters)
-{
+/**
+ * Compute illuminance collected over some specific area (lux). 
+ * Default luminousEfficiencyFunction is phototoptic, in units of lm/watt/nm.
+ * Default peakLuminosityNormalization constant is in units of lm/watt.
+ * Units for default values may be inconsistent with spectral data!
+*/
+Spectrum Spectrum::computeIlluminancePerSquareAreaPerWavelength(    double collectionArea, 
+                                                                    Spectrum luminousEfficiencyFunction, 
+                                                                    double maxLuminousEfficiencyCoefficient ) {
+    return  maxLuminousEfficiencyCoefficient * ( luminousEfficiencyFunction *= ( *this * (1/collectionArea) ) );
+}
+
+/**
+ * Use this method to #computeIlluminancePerSquareAreaPerWavelength with default photopic Spectrum.
+*/
+Spectrum Spectrum::computeIlluminancePerSquareAreaPerWavelength( double collectionArea ) {
+    Spectrum photopic{ photopicEfficiencyData, photopicEfficiencyWavelengths };
+    return computeIlluminancePerSquareAreaPerWavelength( collectionArea, photopic, peakLuminosityNormalization );
+}
+
+double computeLuminanceCandelaPerSquareMeter( std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians, double areaSquareMeters ) {
     return 0.0;
 }
 
-double Spectrum::computeLuminanceCandelaPerSquareMeter(std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians, double areaSquareMeters)
-{
-    return 0.0;
-}
-
-double Spectrum::computeLuminousIntensityCandela(std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians)
-{
+double computeLuminousIntensityCandela( std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians ) {
     return 0.0;
 }
 
@@ -336,10 +342,12 @@ double Spectrum::computePhotonsPerCmSquaredPerSecond(std::vector<double> wavelen
 // Spectral Objects
 //
 
+/**
+ * Splice two spectral objects. 
+ * Spectra can be merged, such that an overlapping indices are necessarily averaged. Overlapping regions without matching wavelength values are simply interleaved.
+ * Two spectra that have no overlap, e.g., a gap exists between the two, will be spliced as though there is no gap at all. E.g., { 0, 1 } and { 5, 6, 7 } merge as { 0, 1, 5, 6, 7 }.
+*/
 Spectrum Spectrum::splice( Spectrum s ) {
-    if ( this->getIntegrationTime() != s.getIntegrationTime() ) {
-        throw std::runtime_error( "Only spectra with matching integration times can be compared and therefore spliced." );
-    }
     std::vector<double> data = getSpectralData();
     std::vector<double> wavelengths = getSpectralWavelengths();
     int parameterIndexer = 0;
@@ -362,14 +370,20 @@ Spectrum Spectrum::splice( Spectrum s ) {
             }
         }
     }
-    return Spectrum{ data, wavelengths, getIntegrationTime() };
+    return Spectrum{ data, wavelengths };
 }
 
+/**
+ * Crop a spectrum using wavelength values rather than vector indices. See overloaded method.
+*/
 void Spectrum::crop( double lowerWavelength, double upperWavelength ) {
     auto [ lowerWavelengthIndex, upperWavelengthIndex ] = getWavelengthIndices( lowerWavelength, upperWavelength );
     Spectrum::crop( lowerWavelengthIndex, upperWavelengthIndex );
 }
 
+/**
+ * Crop a spectrum from an initial index lowerWavelengthIndex to a final index upperWavelengthIndex.
+*/
 void Spectrum::crop( int lowerWavelengthIndex, int upperWavelengthIndex ) {
     if ( upperWavelengthIndex == -1 ) { upperWavelengthIndex = getSpectralData().size() - 1; }
     if ( lowerWavelengthIndex < 0 || upperWavelengthIndex > getSpectralData().size() - 1 ) {
@@ -390,10 +404,16 @@ void Spectrum::crop( int lowerWavelengthIndex, int upperWavelengthIndex ) {
                                 spectralWavelengths.begin() + lowerWavelengthIndex );
 }
 
+/**
+ * Derive a vector that, when multiplied with a spectrum, results in some idealReferenceData vector.
+*/
 std::vector<double> Spectrum::unitlessSpectralCalibration( std::vector<double> idealReferenceData ) {
     return ( *this /= idealReferenceData ).getSpectralData();
 }
 
+/**
+ * Conduct spectral smoothing with a boxcar. Data resulting from this method call match MatLab function movmean().
+*/
 Spectrum Spectrum::boxCarAveraged( int pixelWindow ) {
     if ( pixelWindow <= 0 ) { throw std::runtime_error( "Box car pixel width must be >= 1." ); }
     std::vector<double> data = {}; 
@@ -419,13 +439,16 @@ Spectrum Spectrum::boxCarAveraged( int pixelWindow ) {
         sum = 0;
         sumCount = 0;
     }
-    return Spectrum{ data, getSpectralWavelengths(), getIntegrationTime() };
+    return Spectrum{ data, getSpectralWavelengths() };
 }
 
 //
 // load vectors from file
 //
 
+/**
+ * Load carriage-return-delimited data from file. Specify headerRowCount>0 if that file contains a header which must be omitted.
+*/
 std::vector<double> Spectrum::loadFromFile( std::string const& filePath, int headerRowCount = 0 )
 {
     std::vector<double> v;
@@ -449,39 +472,76 @@ std::vector<double> Spectrum::loadFromFile( std::string const& filePath, int hea
 // whole-spectrum vector arithmetic
 //
 
+/**
+ * Perform an index-wise multiplication of spectral data with a vector of matching length.
+*/
 Spectrum operator*=( Spectrum s, std::vector<double> v )  {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] * v.at(i) );
     }
-    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths(), s.getIntegrationTime() );
+    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths() );
 }
 
+/**
+ * See overloaded method.
+*/
 Spectrum operator*=( std::vector<double> v, Spectrum s ) { return s *= v; }
 
+/**
+ * Perform an index-wise multiplication of data within respective spectral objects. Abscissa must match and will persist in the return object.
+*/
+Spectrum operator*=( Spectrum s1, Spectrum s2 )  {
+    for ( int k = 0; k < s1.getSpectralWavelengths().size(); k++ ) {
+        if ( s1.getSpectralWavelengths().at(k) != s2.getSpectralWavelengths().at(k) ) {
+            throw std::runtime_error( "Spectral-wise multiplication requires matching vectors." );
+        }
+    }
+    if ( s1.getSpectralData().size() != s2.getSpectralData().size() ) {
+        throw std::runtime_error( "Spectral-wise multiplication requires matching data dimensionality." );
+    }
+    std::vector<double> v = {};
+    for ( int i = 0; i < s1.getSpectralData().size(); i++ ) {
+        v.push_back( s1.getSpectralData().at(i) * s2.getSpectralData().at(i) );
+    }
+    return Spectrum( v, s1.getSpectralWavelengths() );
+}
+
+/**
+ * Perform an index-wise division of data within a spectrum with a vector of matching length.
+*/
 Spectrum operator/=( Spectrum s, std::vector<double> v )  {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] / v.at(i) );
     }
-    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths(), s.getIntegrationTime() );
+    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths() );
 }
 
 //
-// spectral index-wise vector arithmetic
+// spectral constant vector arithmetic
 //
 
+/**
+ * Multiply some constant t with each index of spectral data s.
+*/
 Spectrum operator*( Spectrum s, double t ) {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] * t );
     }
-    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths(), s.getIntegrationTime() );
+    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths() );
 }
 
+/**
+ * See overloaded method.
+*/
 Spectrum operator*( double t, Spectrum s ) { return s * t; }
 
 //
 // other operators
 //
 
+/**
+ * Print a spectrum object in a tidy format.
+*/
 std::ostream& operator<<( std::ostream& out, Spectrum & s ) {
     out << "\nAmplitudes : [";
     for ( size_t i = 0; i < s.getSpectralData().size(); ++i ) {

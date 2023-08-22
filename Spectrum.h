@@ -10,7 +10,7 @@ class Spectrum {
 
         // constructors
 
-        explicit Spectrum( std::vector<double> data, std::vector<double> wavelengths, double integrationTime );
+        explicit Spectrum( std::vector<double> data, std::vector<double> wavelengths );
         explicit Spectrum( );
 
         // getters & setters
@@ -18,7 +18,6 @@ class Spectrum {
         std::vector<double> getSpectralData();
         void setSpectralData( int i, double d );
         std::vector<double> getSpectralWavelengths();
-        double getIntegrationTime();
         std::tuple<int, int> getWavelengthIndices( double lowerWavelength, double upperWavelength );
 
         // peaks
@@ -42,17 +41,21 @@ class Spectrum {
         // https://www.oceaninsight.com/globalassets/catalog-blocks-and-images/software-downloads-installers/javadocs-api/spam/index.html
         // TODO implement 'Advanced Color' from https://www.oceaninsight.com/globalassets/catalog-blocks-and-images/software-downloads-installers/javadocs-api/spam/index.html
         // TODO implement 'XYZ Color' from https://www.oceaninsight.com/globalassets/catalog-blocks-and-images/software-downloads-installers/javadocs-api/spam/index.html
+        // also see: https://wp.optics.arizona.edu/jpalmer/radiometry/radiometry-and-photometry-faq/
 
-        // radiometry
+        // radiometry and photometry
 
         double computePower( int lowerBoundWavelength, int upperBoundWavelength );
         double computePowerPerSquareArea( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea );
         Spectrum computePowerPerSquareAreaPerWavelength( double collectionArea );
-        double computeEnergy( int lowerBoundWavelength, int upperBoundWavelength );
-        double computeEnergyPerSquareArea( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea );
-        Spectrum computeEnergyPerSquareAreaPerWavelength( double collectionArea );
+        
+        double computeEnergy( int lowerBoundWavelength, int upperBoundWavelength, double integrationTime );
+        double computeEnergyPerSquareArea( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime );
+        Spectrum computeEnergyPerSquareAreaPerWavelength( double collectionArea, double integrationTime );
 
-        double computeIlluminanceLux( std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double areaSquareMeters );
+        Spectrum computeIlluminancePerSquareAreaPerWavelength( double collectionArea, Spectrum luminousEfficiencyFunction, double maxLuminousEfficiencyCoefficient );
+        Spectrum computeIlluminancePerSquareAreaPerWavelength( double collectionArea );
+
         double computeLuminanceCandelaPerSquareMeter( std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians, double areaSquareMeters );
         double computeLuminousIntensityCandela( std::vector<double> wavelengths, std::vector<double> energyWattsPerNanometer, std::vector<double> V_wavelengths, std::vector<double> V, double K_m, double steradians );
 
@@ -75,7 +78,11 @@ class Spectrum {
 
         std::vector<double> spectralData;
         std::vector<double> spectralWavelengths;
-        double integrationTime;
+
+        // data fields for photometry calculations in photopic regime
+        std::vector<double> photopicEfficiencyData = { 0.027, 0.082, 0.082, 0.27, 0.826, 2.732, 7.923, 15.709, 25.954, 40.98, 62.139, 94.951, 142.078, 220.609, 303.464, 343.549, 484.93, 588.746, 651.582, 679.551, 683, 679.585, 650.216, 594.21, 517.031, 430.973, 343.549, 260.223, 180.995, 119.525, 73.081, 41.663, 21.856, 11.611, 5.607, 2.802, 1.428, 0.715, 0.355, 0.17, 0.082, 0.041, 0.02 };
+        std:: vector<double> photopicEfficiencyWavelengths = { 380, 390, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 507, 510, 520, 530, 540, 550, 555, 560, 570, 580, 590, 600, 610, 620, 630, 640, 650, 660, 670, 680, 690, 700, 710, 720, 730, 740, 750, 760, 770 };
+        double peakLuminosityNormalization = 683.002;       // units: [ lm / [power] ]
 
 };
 
@@ -83,9 +90,10 @@ class Spectrum {
 
 Spectrum operator*=( Spectrum s, std::vector<double> v );
 Spectrum operator*=( std::vector<double> v, Spectrum s );
+Spectrum operator*=( Spectrum s1, Spectrum s2 );
 Spectrum operator/=( Spectrum s, std::vector<double> v );
 
-// spectral index-wise vector arithmetic
+// spectral constant vector arithmetic
 
 Spectrum operator*( Spectrum s, double t );
 Spectrum operator*( double t, Spectrum s );
