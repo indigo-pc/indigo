@@ -39,11 +39,11 @@ Spectrum::Spectrum( std::vector<double> data,
 
 std::vector<double> Spectrum::getSpectralData() { return this -> spectralData; }
 
-void Spectrum::setSpectralData( int i, double d ) { ( this -> spectralData[i] ) = d; }
+void Spectrum::setSpectralData( const int & i, const double & d ) { ( this -> spectralData[i] ) = d; }
 
 std::vector<double> Spectrum::getSpectralWavelengths() { return this -> spectralWavelengths; }
 
-std::tuple<int, int> Spectrum::getWavelengthIndices( double lowerWavelength, double upperWavelength ) {
+std::tuple<int, int> Spectrum::getWavelengthIndices( const double & lowerWavelength, const double & upperWavelength ) {
     if ( lowerWavelength >= upperWavelength ) {
         throw std::runtime_error( "Lower wavelength argument must not be equal or larger than upper." );
     }
@@ -71,7 +71,7 @@ std::tuple<int, int> Spectrum::getWavelengthIndices( double lowerWavelength, dou
  * Return vector of peaks (amplitudes) within some normalized percent difference tolerance.
  * E.g., percentTolerance=0 returns only the largest peak(s) and percentTolerance=1 returns _all_ peaks.
 */
-std::vector<double> Spectrum::getPeakAmplitudes( double percentTolerance ) {
+std::vector<double> Spectrum::getPeakAmplitudes( const double & percentTolerance ) {
     if ( percentTolerance < 0 || percentTolerance > 1 ) {
         throw std::runtime_error( "percentTolerance argument to Spectrum#getPeakAmplitudes must be [0 1] inclusive." );
     }
@@ -108,7 +108,7 @@ std::vector<double> Spectrum::getPeakAmplitudes( double percentTolerance ) {
 /**
  * Return vector of peaks as vector indices. See #getPeakAmplitudes.
 */
-std::vector<int> Spectrum::getPeakIndices( double tolerance ) {
+std::vector<int> Spectrum::getPeakIndices( const double & tolerance ) {
     std::vector<double> peakAmplitudes = getPeakAmplitudes( tolerance );
     std::vector<int> indices = {};
     std::vector<double> data = getSpectralData();
@@ -129,7 +129,7 @@ std::vector<int> Spectrum::getPeakIndices( double tolerance ) {
  * If the peak occurs at the first or last index, that peak is assumed symmetric.
  * Spectra with large DC offset discontinuities at peak locations will return less accurate FWHM estimates.
 */
-double Spectrum::peakFullWidthHalfMax( int index ) {
+double Spectrum::peakFullWidthHalfMax( const int & index ) {
     std::vector<int> peaks = getPeakIndices( 1 );
     bool notFound = true;
     for ( int i = 0; i < peaks.size(); i++ ) {
@@ -162,7 +162,7 @@ double Spectrum::peakFullWidthHalfMax( int index ) {
 /**
  * Return full width half max for a peak at specified wavelength. See overloaded method.
 */
-double Spectrum::peakFullWidthHalfMax( double wavelength ) {
+double Spectrum::peakFullWidthHalfMax( const double & wavelength ) {
     for ( int i = 0; i < getSpectralWavelengths().size(); i++ ) {
         if ( wavelength == getSpectralWavelengths().at(i) ) {
             return peakFullWidthHalfMax( i );
@@ -194,7 +194,7 @@ bool Spectrum::isSaturated() {
  * Compute irradiance in [uW/cm^2]. Calculation assumes #getSpectralData in units of [uW/cm^2/nm] (absolute spectral irradiance).
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#compute_uWattPerCmSquared.
 */
-double Spectrum::computeMicrowattsPerCmSquared( int lowerBoundWavelength, int upperBoundWavelength ) {
+double Spectrum::computeMicrowattsPerCmSquared( int & lowerBoundWavelength, int & upperBoundWavelength ) {
     return computeIntegral( lowerBoundWavelength, upperBoundWavelength );
 }
 
@@ -203,7 +203,7 @@ double Spectrum::computeMicrowattsPerCmSquared( int lowerBoundWavelength, int up
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#compute_uWatt.
  * collectionArea in [cm^2].
 */
-double Spectrum::computeMicrowatts( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea ) {
+double Spectrum::computeMicrowatts( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea ) {
     return computeMicrowattsPerCmSquared( lowerBoundWavelength, upperBoundWavelength ) * collectionArea;
 }
 
@@ -212,7 +212,7 @@ double Spectrum::computeMicrowatts( int lowerBoundWavelength, int upperBoundWave
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#compute_uWattPerNm.
  * collectionArea in [cm^2].
 */
-Spectrum Spectrum::computeMicrowattsPerNanometer( double collectionArea ) {
+Spectrum Spectrum::computeMicrowattsPerNanometer( double & collectionArea ) {
     return *this * collectionArea;
 }
 
@@ -221,10 +221,10 @@ Spectrum Spectrum::computeMicrowattsPerNanometer( double collectionArea ) {
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#compute_Joules.
  * collectionArea in [cm^2], integrationTime in [seconds].
 */
-double Spectrum::computeJoules( int lowerBoundWavelength, 
-                                int upperBoundWavelength, 
-                                double collectionArea, 
-                                double integrationTime ) {
+double Spectrum::computeJoules( int & lowerBoundWavelength, 
+                                int & upperBoundWavelength, 
+                                double & collectionArea, 
+                                double & integrationTime ) {
     return computeMicrowatts( lowerBoundWavelength, upperBoundWavelength, collectionArea ) * integrationTime * (1.0/1000000.0);
 }
 
@@ -233,10 +233,10 @@ double Spectrum::computeJoules( int lowerBoundWavelength,
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#computeElectronVolts_eV.
  * collectionArea in [cm^2], integrationTime in [seconds].
 */
-double Spectrum::computeElectronVolts(  int lowerBoundWavelength, 
-                                        int upperBoundWavelength, 
-                                        double collectionArea, 
-                                        double integrationTime ) {
+double Spectrum::computeElectronVolts(  int & lowerBoundWavelength, 
+                                        int & upperBoundWavelength, 
+                                        double & collectionArea, 
+                                        double & integrationTime ) {
     return computeJoules( lowerBoundWavelength, upperBoundWavelength, collectionArea, integrationTime ) * ( 1 / electricChargeElectron );
 }
 
@@ -246,13 +246,13 @@ double Spectrum::computeElectronVolts(  int lowerBoundWavelength,
  * Note: user need not specify an incident area in m^2, as method returns lux in lumens/m^2 based upon the collection area in cm^2 for original data.
  * Note: #getSpectralWavelengths must match efficiencyFunctionWavelengths. Else, #crop.
 */
-double Spectrum::computeLux(    Spectrum luminousEfficiencyFunction, 
-                                double maxLuminousEfficiencyCoefficient ) {
+double Spectrum::computeLux(    Spectrum & luminousEfficiencyFunction, 
+                                double & maxLuminousEfficiencyCoefficient ) {
     double convertMicrowattToWatt = 1.0 / 1000000.0;
     double convertPerCmSquaredToPerMeterSquared = 1.0 / 10000.0;
-    Spectrum wattsPerMeterSquaredPerNanometer = convertMicrowattToWatt * convertPerCmSquaredToPerMeterSquared * *this;
+    Spectrum wattsPerMeterSquaredPerNanometer = *this * convertMicrowattToWatt * convertPerCmSquaredToPerMeterSquared;
     Spectrum lumensPerMeterSquaredPerNanometer = wattsPerMeterSquaredPerNanometer *= luminousEfficiencyFunction;
-    return maxLuminousEfficiencyCoefficient * lumensPerMeterSquaredPerNanometer.computeIntegral( 0, -1 );
+    return maxLuminousEfficiencyCoefficient * lumensPerMeterSquaredPerNanometer.computeIntegral( lowerBound, upperBound );
 }
 
 /**
@@ -260,7 +260,8 @@ double Spectrum::computeLux(    Spectrum luminousEfficiencyFunction,
  * See base method #computeLux.
 */
 double Spectrum::computeLuxPhotopic( ) {
-    return computeLux(  Spectrum{ photopicEfficiencyData, efficiencyFunctionWavelengths }, peakPhotopicLuminosity );
+    Spectrum photopic { photopicEfficiencyData, efficiencyFunctionWavelengths };
+    return computeLux( photopic, peakPhotopicLuminosity );
 }
 
 /**
@@ -268,16 +269,17 @@ double Spectrum::computeLuxPhotopic( ) {
  * See base method #computeLux.
 */
 double Spectrum::computeLuxScotopic( ) {
-    return computeLux(  Spectrum{ scotopicEfficiencyData, efficiencyFunctionWavelengths }, peakScotopicLuminosity );
+    Spectrum scotopic { scotopicEfficiencyData, efficiencyFunctionWavelengths };
+    return computeLux( scotopic, peakScotopicLuminosity );
 }
 
 /**
  * Compute lumens. Calculation assumes #getSpectralData in units of [uW/cm^2/nm] (absolute spectral irradiance).
  * collectionArea in [cm^2].
 */
-double Spectrum::computeLumens( Spectrum luminousEfficiencyFunction, 
-                                double maxLuminousEfficiencyCoefficient,
-                                double collectionArea ) {
+double Spectrum::computeLumens( Spectrum & luminousEfficiencyFunction, 
+                                double & maxLuminousEfficiencyCoefficient,
+                                double & collectionArea ) {
     double convertPerMeterSquaredToPerCentimeterSquared = 10000.0;
     return collectionArea * convertPerMeterSquaredToPerCentimeterSquared * computeLux( luminousEfficiencyFunction, maxLuminousEfficiencyCoefficient );
 }
@@ -287,10 +289,10 @@ double Spectrum::computeLumens( Spectrum luminousEfficiencyFunction,
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#computeLuminousIntensityCandela.
  * solidAngle in [steradians]. collectionArea in [cm^2].
 */
-double Spectrum::computeCandella(   Spectrum luminousEfficiencyFunction, 
-                                    double maxLuminousEfficiencyCoefficient,
-                                    double collectionArea,
-                                    double solidAngle ) {
+double Spectrum::computeCandella(   Spectrum & luminousEfficiencyFunction, 
+                                    double & maxLuminousEfficiencyCoefficient,
+                                    double & collectionArea,
+                                    double & solidAngle ) {
     return computeLumens( luminousEfficiencyFunction, maxLuminousEfficiencyCoefficient, collectionArea ) / solidAngle;
 }
 
@@ -298,7 +300,7 @@ double Spectrum::computeCandella(   Spectrum luminousEfficiencyFunction,
  * Compute luminous flux in [photons/cm^2/s]. Calculation assumes #getSpectralData in units of [uW/cm^2/nm] (absolute spectral irradiance).
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#computePhotonsPerCmSquaredPerSecond.
 */
-double Spectrum::computePhotonsPerCmSquaredPerSecond( int lowerBoundWavelength, int upperBoundWavelength ) {
+double Spectrum::computePhotonsPerCmSquaredPerSecond( int & lowerBoundWavelength, int & upperBoundWavelength ) {
     std::vector<double> photonsPerCmSquaredPerSecondPerNanometer = {};
     double plancksConstant = 6.62607015e-34;
     double velocityOfLight = 2.998e8;
@@ -307,7 +309,7 @@ double Spectrum::computePhotonsPerCmSquaredPerSecond( int lowerBoundWavelength, 
     for ( int i = 0; i < getSpectralData().size(); i++ ) {
         photonsPerCmSquaredPerSecondPerNanometer.push_back( (getSpectralData().at(i) * getSpectralWavelengths().at(i) * metersToNanometer * wattsToMicrowatts) / ( plancksConstant * velocityOfLight ) );
     }
-    return Spectrum{ photonsPerCmSquaredPerSecondPerNanometer, getSpectralWavelengths() }.computeIntegral( 0, -1 );
+    return Spectrum{ photonsPerCmSquaredPerSecondPerNanometer, getSpectralWavelengths() }.computeIntegral( lowerBound, upperBound );
 }
 
 /**
@@ -315,7 +317,7 @@ double Spectrum::computePhotonsPerCmSquaredPerSecond( int lowerBoundWavelength, 
  * Calculation replicates Ocean Optics Spectral Processing and Math AdvancedPhotometrics#computeTotalPhotons.
  * integrationTime in [seconds]. collectionArea in [cm^2].
 */
-double Spectrum::computeTotalPhotons( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime ) {
+double Spectrum::computeTotalPhotons( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea, double & integrationTime ) {
     return computePhotonsPerCmSquaredPerSecond( lowerBoundWavelength, upperBoundWavelength ) * collectionArea * integrationTime;
 }
 
@@ -328,7 +330,7 @@ double Spectrum::computeTotalPhotons( int lowerBoundWavelength, int upperBoundWa
  * Spectra can be merged, such that an overlapping indices are necessarily averaged. Overlapping regions without matching wavelength values are simply interleaved.
  * Two spectra that have no overlap, e.g., an abscissa gap exists between the two, will be spliced as though there is no gap at all. E.g., { 0, 1 } and { 5, 6, 7 } merge as { 0, 1, 5, 6, 7 }.
 */
-Spectrum Spectrum::splice( Spectrum s ) {
+Spectrum Spectrum::splice( Spectrum & s ) {
     std::vector<double> data = getSpectralData();
     std::vector<double> wavelengths = getSpectralWavelengths();
     int parameterIndexer = 0;
@@ -357,7 +359,7 @@ Spectrum Spectrum::splice( Spectrum s ) {
 /**
  * Crop a spectrum using wavelength values rather than vector indices. See overloaded method.
 */
-void Spectrum::crop( double lowerWavelength, double upperWavelength ) {
+void Spectrum::crop( double & lowerWavelength, double & upperWavelength ) {
     auto [ lowerWavelengthIndex, upperWavelengthIndex ] = getWavelengthIndices( lowerWavelength, upperWavelength );
     Spectrum::crop( lowerWavelengthIndex, upperWavelengthIndex );
 }
@@ -365,7 +367,7 @@ void Spectrum::crop( double lowerWavelength, double upperWavelength ) {
 /**
  * Crop a spectrum from an initial index lowerWavelengthIndex to a final index upperWavelengthIndex.
 */
-void Spectrum::crop( int lowerWavelengthIndex, int upperWavelengthIndex ) {
+void Spectrum::crop( int & lowerWavelengthIndex, int & upperWavelengthIndex ) {
     if ( upperWavelengthIndex == -1 ) { upperWavelengthIndex = getSpectralData().size() - 1; }
     if ( lowerWavelengthIndex < 0 || upperWavelengthIndex > getSpectralData().size() - 1 ) {
         throw std::runtime_error( "Index argument to #crop is out-of-bounds." );
@@ -388,14 +390,14 @@ void Spectrum::crop( int lowerWavelengthIndex, int upperWavelengthIndex ) {
 /**
  * Derive a vector that, when multiplied with a spectrum, results in some idealReferenceData vector.
 */
-std::vector<double> Spectrum::unitlessSpectralCalibration( std::vector<double> idealReferenceData ) {
+std::vector<double> Spectrum::unitlessSpectralCalibration( std::vector<double> & idealReferenceData ) {
     return ( *this /= idealReferenceData ).getSpectralData();
 }
 
 /**
  * Conduct spectral smoothing with a boxcar. Data resulting from this method call matches MatLab function movmean().
 */
-Spectrum Spectrum::boxCarAveraged( int pixelWindow ) {
+Spectrum Spectrum::boxCarAveraged( const int & pixelWindow ) {
     if ( pixelWindow <= 0 ) { throw std::runtime_error( "Box car pixel width must be >= 1." ); }
     std::vector<double> data = {}; 
     double sum = 0; 
@@ -430,7 +432,7 @@ Spectrum Spectrum::boxCarAveraged( int pixelWindow ) {
 /**
  * Load carriage-return-delimited data from file. Specify headerRowCount>0 if that file contains a header which must be omitted.
 */
-std::vector<double> Spectrum::loadFromFile( std::string const& filePath, int headerRowCount = 0 )
+std::vector<double> Spectrum::loadFromFile( const std::string & filePath, const int & headerRowCount = 0 )
 {
     std::vector<double> v;
     std::ifstream file( filePath );
@@ -456,7 +458,7 @@ std::vector<double> Spectrum::loadFromFile( std::string const& filePath, int hea
 /**
  * Perform a trapezoidal integration using wavelengths as boundaries.
 */
-double Spectrum::computeIntegral( double lowerWavelength, double upperWavelength ) {
+double Spectrum::computeIntegral( double & lowerWavelength, double & upperWavelength ) {
     auto [ lowerWavelengthIndex, upperWavelengthIndex ] = getWavelengthIndices( lowerWavelength, upperWavelength );
     return Spectrum::computeIntegral( lowerWavelengthIndex, upperWavelengthIndex );
 }
@@ -464,7 +466,7 @@ double Spectrum::computeIntegral( double lowerWavelength, double upperWavelength
 /**
  * Perform a trapezoidal integration using abscissa vector indices as boudnaries. 
 */
-double Spectrum::computeIntegral( int lowerWavelengthIndex, int upperWavelengthIndex ) {
+double Spectrum::computeIntegral( int & lowerWavelengthIndex, int & upperWavelengthIndex ) {
     if ( upperWavelengthIndex == -1 ) {
         upperWavelengthIndex = getSpectralData().size()-1;
     }
@@ -482,7 +484,7 @@ double Spectrum::computeIntegral( int lowerWavelengthIndex, int upperWavelengthI
 /**
  * Identify maximum value for any std::vector<double>.
 */
-double Spectrum::getMaxValue( std::vector<double> v ) {
+double Spectrum::getMaxValue( const std::vector<double> & v ) {
     double maxValue = -DBL_MAX; 
     for ( int i = 0; i < v.size(); i ++ ) {
         if ( v.at(i) > maxValue ) { maxValue = v.at(i); }
@@ -493,7 +495,7 @@ double Spectrum::getMaxValue( std::vector<double> v ) {
 /**
  * Identify minimum value for any std::vector<double>.
 */
-double Spectrum::getMinValue( std::vector<double> v ) {
+double Spectrum::getMinValue( const std::vector<double> & v ) {
     double minValue = DBL_MAX; 
     for ( int i = 0; i < v.size(); i ++ ) {
         if ( v.at(i) < minValue ) { minValue = v.at(i); }
@@ -504,7 +506,7 @@ double Spectrum::getMinValue( std::vector<double> v ) {
 /**
  * Compute percent difference of two values in arbitrary order.
 */
-double Spectrum::percentDifference( double v1, double v2 ) {
+double Spectrum::percentDifference( const double & v1, const double & v2 ) {
     return ( std::abs( v1 - v2 ) / ((v1 + v2) / 2.0) ) * 100;
 }
 
@@ -515,7 +517,7 @@ double Spectrum::percentDifference( double v1, double v2 ) {
 /**
  * Perform an index-wise multiplication of spectral data with a vector of matching length.
 */
-Spectrum operator*=( Spectrum s, std::vector<double> v )  {
+Spectrum operator*=( Spectrum s, std::vector<double> & v )  {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] * v.at(i) );
     }
@@ -525,7 +527,7 @@ Spectrum operator*=( Spectrum s, std::vector<double> v )  {
 /**
  * See overloaded method.
 */
-Spectrum operator*=( std::vector<double> v, Spectrum s ) { return s *= v; }
+Spectrum operator*=( std::vector<double> & v, Spectrum s ) { return s *= v; }
 
 /**
  * Perform an index-wise multiplication of data within respective spectral objects. Abscissa must match and will persist in the return object.
@@ -549,7 +551,7 @@ Spectrum operator*=( Spectrum s1, Spectrum s2 )  {
 /**
  * Perform an index-wise division of data within a spectrum with a vector of matching length.
 */
-Spectrum operator/=( Spectrum s, std::vector<double> v )  {
+Spectrum operator/=( Spectrum s, std::vector<double> & v )  {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] / v.at(i) );
     }
@@ -563,22 +565,23 @@ Spectrum operator/=( Spectrum s, std::vector<double> v )  {
 /**
  * Multiply some constant t with each index of spectral data s.
 */
-Spectrum operator*( Spectrum s, double t ) {
+Spectrum operator*( Spectrum s, double & t ) {
     for (int i = 0; i < s.getSpectralData().size(); i++) {
         s.setSpectralData( i, s.getSpectralData()[i] * t );
     }
-    return Spectrum( s.getSpectralData(), s.getSpectralWavelengths() );
+    // Spectrum s { s.getSpectralData(), s.getSpectralWavelengths() };
+    return Spectrum { s.getSpectralData(), s.getSpectralWavelengths() };
 }
 
 /**
  * See overloaded method.
 */
-Spectrum operator*( double t, Spectrum s ) { return s * t; }
+Spectrum operator*( double & t, Spectrum s ) { return s * t; }
 
 /**
  * Multiply some constant t with each index of std::vector v.
 */
-std::vector<double> operator*( std::vector<double> v, double t ) {
+std::vector<double> operator*( std::vector<double> & v, double & t ) {
     for (int i = 0; i < v.size(); i++) {
         v.at(i) *= t;
     }
@@ -588,7 +591,7 @@ std::vector<double> operator*( std::vector<double> v, double t ) {
 /**
  * See overloaded method.
 */
-std::vector<double> operator*( double t, std::vector<double> v ) { return v * t; }
+std::vector<double> operator*( double & t, std::vector<double> & v ) { return v * t; }
 
 //
 // other operators
@@ -597,7 +600,7 @@ std::vector<double> operator*( double t, std::vector<double> v ) { return v * t;
 /**
  * Print a spectrum object in a tidy format.
 */
-std::ostream& operator<<( std::ostream & out, Spectrum & s ) {
+std::ostream & operator<<( std::ostream & out, Spectrum & s ) {
     out << "\nAmplitudes : [";
     for ( size_t i = 0; i < s.getSpectralData().size(); ++i ) {
         out << s.getSpectralData()[i];

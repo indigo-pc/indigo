@@ -15,56 +15,61 @@ class Spectrum {
         // getters & setters
 
         std::vector<double> getSpectralData();
-        void setSpectralData( int i, double d );
+        void setSpectralData( const int & i, const double & d );
         std::vector<double> getSpectralWavelengths();
-        std::tuple<int, int> getWavelengthIndices( double lowerWavelength, double upperWavelength );
+        std::tuple<int, int> getWavelengthIndices( const double & lowerWavelength, const double & upperWavelength );
 
         // peaks
 
-        std::vector<int> getPeakIndices( double tolerance );
-        std::vector<double> getPeakAmplitudes( double tolerance );
-        double peakFullWidthHalfMax( int index );
-        double peakFullWidthHalfMax( double wavelength );
+        std::vector<int> getPeakIndices( const double & tolerance );
+        std::vector<double> getPeakAmplitudes( const double & tolerance );
+        double peakFullWidthHalfMax( const int & index );
+        double peakFullWidthHalfMax( const double & wavelength );
         bool isSaturated();
 
         // radiometry and photometry
 
-        double computeMicrowattsPerCmSquared( int lowerBoundWavelength, int upperBoundWavelength );
-        double computeMicrowatts( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea );
-        Spectrum computeMicrowattsPerNanometer( double collectionArea );
+        double computeMicrowattsPerCmSquared( int & lowerBoundWavelength, int & upperBoundWavelength );
+        double computeMicrowatts( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea );
+        Spectrum computeMicrowattsPerNanometer( double & collectionArea );
 
-        double computeJoules( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime );
-        double computeElectronVolts( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime );
+        double computeJoules( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea, double & integrationTime );
+        double computeElectronVolts( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea, double & integrationTime );
 
-        double computeLux( Spectrum luminousEfficiencyFunction, double maxLuminousEfficiencyCoefficient );
+        double computeLux( Spectrum & luminousEfficiencyFunction, double & maxLuminousEfficiencyCoefficient );
         double computeLuxPhotopic( );
         double computeLuxScotopic( );
-        double computeLumens( Spectrum luminousEfficiencyFunction, double maxLuminousEfficiencyCoefficient, double collectionArea );
+        double computeLumens( Spectrum & luminousEfficiencyFunction, double & maxLuminousEfficiencyCoefficient, double & collectionArea );
 
-        double computeCandella( Spectrum luminousEfficiencyFunction, double maxLuminousEfficiencyCoefficient, double collectionArea, double solidAngle );
+        double computeCandella( Spectrum & luminousEfficiencyFunction, double & maxLuminousEfficiencyCoefficient, double & collectionArea, double & solidAngle );
 
-        double computePhotonsPerCmSquaredPerSecond( int lowerBoundWavelength, int upperBoundWavelength );
-        double computeTotalPhotons( int lowerBoundWavelength, int upperBoundWavelength, double collectionArea, double integrationTime );
+        double computePhotonsPerCmSquaredPerSecond( int & lowerBoundWavelength, int & upperBoundWavelength );
+        double computeTotalPhotons( int & lowerBoundWavelength, int & upperBoundWavelength, double & collectionArea, double & integrationTime );
 
         // Spectral Objects
 
-        Spectrum splice( Spectrum s );
-        void crop( double lowerWavelength, double upperWavelength );
-        void crop( int lowerWavelengthIndex, int upperWavelengthIndex );
-        std::vector<double> unitlessSpectralCalibration( std::vector<double> idealReferenceData );
-        Spectrum boxCarAveraged( int pixels );
+        Spectrum splice( Spectrum & s );
+        void crop( double & lowerWavelength, double & upperWavelength );
+        void crop( int & lowerWavelengthIndex, int & upperWavelengthIndex );
+        std::vector<double> unitlessSpectralCalibration( std::vector<double> & idealReferenceData );
+        Spectrum boxCarAveraged( const int & pixels );
 
         // load vectors from file
 
-        static std::vector<double> loadFromFile( std::string const& filePath, int headerRowCount );
+        static std::vector<double> loadFromFile( const std::string & filePath, const int & headerRowCount );
 
         // maths
 
-        double computeIntegral( double lowerWavelength, double upperWavelength );
-        double computeIntegral( int lowerWavelengthIndex, int upperWavelengthIndex );
-        double getMaxValue( std::vector<double> v );
-        double getMinValue( std::vector<double> v );
-        double percentDifference( double v1, double v2 );
+        double computeIntegral( double & lowerWavelength, double & upperWavelength );
+        double computeIntegral( int & lowerWavelengthIndex, int & upperWavelengthIndex );
+        double getMaxValue( const std::vector<double> & v );
+        double getMinValue( const std::vector<double> & v );
+        double percentDifference( const double & v1, const double & v2 );
+
+        // constants
+
+        int lowerBound = 0;
+        int upperBound = -1;
 
     private:
 
@@ -83,17 +88,17 @@ class Spectrum {
 
 // whole-spectrum vector arithmetic
 
-Spectrum operator*=( Spectrum s, std::vector<double> v );
-Spectrum operator*=( std::vector<double> v, Spectrum s );
+Spectrum operator*=( Spectrum s, std::vector<double> & v );
+Spectrum operator*=( std::vector<double> & v, Spectrum s );
 Spectrum operator*=( Spectrum s1, Spectrum s2 );
-Spectrum operator/=( Spectrum s, std::vector<double> v );
+Spectrum operator/=( Spectrum s, std::vector<double> & v );
 
 // spectral constant vector arithmetic
 
-Spectrum operator*( Spectrum s, double t );
-Spectrum operator*( double t, Spectrum s );
-std::vector<double> operator*( std::vector<double> v, double t );
-std::vector<double> operator*( double t, std::vector<double> v );
+Spectrum operator*( Spectrum s, double & t );
+Spectrum operator*( double & t, Spectrum s );
+std::vector<double> operator*( std::vector<double> & v, double & t );
+std::vector<double> operator*( double & t, std::vector<double> & v );
 
 // other operators
 
