@@ -456,6 +456,18 @@ std::vector<double> Spectrum::loadFromFile( const std::string & filePath, const 
 //
 
 /**
+ * Create a Gaussian plotted along s.getSpectralWavelengths() with some maxValue centered on centerValue with rmsWidth.
+*/
+Spectrum Spectrum::createGaussian( std::vector<double> & abscissa, const double & maxValue, const double & centerValue, const double & rmsWidth ) {
+    std::vector<double> gaussWuzHere = {};
+    double e = 2.71828;
+    for ( int i = 0; i < abscissa.size(); i++ ) {
+        gaussWuzHere.push_back( maxValue * std::pow( e, -( std::pow( (abscissa.at(i)-centerValue), 2 ) / ( 2.0 * std::pow( rmsWidth, 2 )) ) ) );
+    }
+    return Spectrum{ gaussWuzHere, abscissa };
+}
+
+/**
  * Perform a trapezoidal integration using wavelengths as boundaries.
 */
 double Spectrum::computeIntegral( double & lowerWavelength, double & upperWavelength ) {
